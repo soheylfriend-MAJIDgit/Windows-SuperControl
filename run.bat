@@ -15,21 +15,33 @@ echo.
 echo    Repo : %~dp0
 echo.
 echo    [1]  Open control panel  (fetch + run code from Drive)
+echo    [2]  Send a letter       (type text -^> name.txt in Drive)
 echo    [0]  Exit
 echo.
-choice /c 10 /n /m "Your choice [1/0]: "
-if errorlevel 2 goto :end
+choice /c 120 /n /m "Your choice [1/2/0]: "
+if %errorlevel%==3 goto :end
+if %errorlevel%==2 goto :letter
+goto :run
 
+:letter
+set "ARG=--tab=letter"
+goto :launch
+
+:run
+set "ARG="
+goto :launch
+
+:launch
 echo.
 where py >nul 2>&1
 if %errorlevel%==0 (
-    py -3 "%~dp0launcher.py"
+    py -3 "%~dp0launcher.py" %ARG%
     goto :end
 )
 
 where python >nul 2>&1
 if %errorlevel%==0 (
-    python "%~dp0launcher.py"
+    python "%~dp0launcher.py" %ARG%
     goto :end
 )
 
