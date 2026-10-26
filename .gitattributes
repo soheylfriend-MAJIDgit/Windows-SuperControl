@@ -2,4 +2,3 @@
 *.bat text eol=crlf
 *.py text eol=lf
 *.md text eol=lf
-*.gs text eol=lf
