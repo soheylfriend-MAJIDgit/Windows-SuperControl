@@ -1,23 +1,26 @@
 /**
- * Windows-SuperControl - گزینه «ارسال نامه»
+ * Windows-SuperControl - گزینه «ارسال نامه» + استعلام
  * =====================================================
  * این کد را در Google Apps Script قرار بده و بهصورت «Web app» دیپلوی کن.
- * دستورالعمل کامل و قدمبهقدم توی README.md نوشته شده.
+ * (اگر قبلاً دیپلوی کردهای: Deploy -> Manage deployments -> New version -> Deploy)
  *
- * کاری که میکند: متنی را که برنامه پایتونی میفرستد میگیرد و در همان
- * پوشه درایو، داخل فایل name.txt بهصورت زنده ذخیره میکند.
+ * تغییرات این نسخه:
+ *   - بعد از نوشتن، همان فایل را دوباره از درایو میخواند (read-back) و نتیجه را
+ *     همراه زمانبندی سرور برمیگرداند: verified / echo / server_write_ms / server_read_ms
+ *   - حالت action=check فقط میخواند و هیچ چیزی نمینویسد (استعلام خالص)
  */
 
-const FOLDER_ID   = '1PmMAu537pzN3mjKf_PYctUOlbOIQCUf1'; // همان پوشه Windows-SuperControl
-const LETTER_FILE = 'name.txt';                          // فایل زنده نامهها
-const SECRET      = '';                                  // اختیاری: یک رمز ساده (هر دو طرف یکسان باشد)
-const MAX_CHARS   = 10000;                               // حداکثر طول هر نامه
+const FOLDER_ID       = '1PmMAu537pzN3mjKf_PYctUOlbOIQCUf1'; // پوشه Windows-SuperControl
+const LETTER_FILE_ID  = '1fzI9jceihjTmeJ4wYguWYA0EGMV3EcMP'; // فایل name.txt
+const LETTER_FILE     = 'name.txt';
+const SECRET          = '';                                  // اختیاری؛ هردو طرف یکسان باشد
+const MAX_CHARS       = 10000;
 
-// هم GET و هم POST را قبول میکنیم، چون وب اپهای گوگل گاهی ریدایرکت میکنند.
 function doGet(e)  { return handle(e); }
 function doPost(e) { return handle(e); }
 
 function handle(e) {
+  const started = Date.now();
   let p;
   try {
     p = readParams(e);
@@ -29,6 +32,23 @@ function handle(e) {
     return reply({ ok: false, error: 'wrong secret' });
   }
 
+  // ---------- حالت استعلام خالص: فقط خواندن، بدون نوشتن ----------
+  if (String(p.action || '') === 'check') {
+    try {
+      const file = getLetterFile();
+      const content = file.getBlob().getDataAsString('UTF-8');
+      return reply({
+        ok: true, action: 'check', file: LETTER_FILE,
+        text: content, chars: content.length,
+        server_ms: Date.now() - started,
+        time: new Date().toISOString()
+      });
+    } catch (err) {
+      return reply({ ok: false, action: 'check', error: String(err) });
+    }
+  }
+
+  // ---------- حالت نوشتن ----------
   const text = String(p.text || '');
   if (text.length > MAX_CHARS) {
     return reply({ ok: false, error: 'text too long (max ' + MAX_CHARS + ')' });
@@ -36,16 +56,18 @@ function handle(e) {
 
   try {
     const folder = DriveApp.getFolderById(FOLDER_ID);
+    const file = getLetterFile();
 
-    // 1) فایل زنده: اگر هست آپدیت شود، اگر نه ساخته شود
-    const found = folder.getFilesByName(LETTER_FILE);
-    if (found.hasNext()) {
-      found.next().setContent(text);
-    } else {
-      folder.createFile(LETTER_FILE, text, MimeType.PLAIN_TEXT);
-    }
+    const w0 = Date.now();
+    file.setContent(text);
+    const writeMs = Date.now() - w0;
 
-    // 2) بایگانی جداگانه فقط وقتی دکمه «ارسال و بایگانی» زده شده
+    // *** استعلام: دوباره همان فایل را از درایو میخوانیم ***
+    const r0 = Date.now();
+    const echo = getLetterFile().getBlob().getDataAsString('UTF-8');
+    const readMs = Date.now() - r0;
+    const verified = (echo === text);
+
     let archiveName = '';
     if (String(p.archive || '') === '1' && text.trim()) {
       const stamp = Utilities.formatDate(
@@ -57,13 +79,30 @@ function handle(e) {
 
     return reply({
       ok: true,
+      verified: verified,
+      echo: echo,
       file: LETTER_FILE,
       archive: archiveName,
       chars: text.length,
+      server_write_ms: writeMs,
+      server_read_ms: readMs,
+      server_total_ms: Date.now() - started,
       time: new Date().toISOString()
     });
   } catch (err) {
     return reply({ ok: false, error: String(err) });
+  }
+}
+
+/** فایل نامه را با آیدی ثابت پیدا میکند؛ اگر پاک شده باشد دوباره میسازد. */
+function getLetterFile() {
+  try {
+    return DriveApp.getFileById(LETTER_FILE_ID);
+  } catch (err) {
+    const folder = DriveApp.getFolderById(FOLDER_ID);
+    const found = folder.getFilesByName(LETTER_FILE);
+    if (found.hasNext()) return found.next();
+    return folder.createFile(LETTER_FILE, '', MimeType.PLAIN_TEXT);
   }
 }
 
