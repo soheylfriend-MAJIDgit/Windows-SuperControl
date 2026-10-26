@@ -1,0 +1,4 @@
+# فایل bat حتماً با CRLF باشد تا cmd.exe ویندوز درست اجراش کند
+*.bat text eol=crlf
+*.py text eol=lf
+*.md text eol=lf
