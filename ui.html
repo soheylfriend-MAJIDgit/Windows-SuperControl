@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="fa" dir="rtl" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Windows SuperControl</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============ ۱. متغیرهای رنگ ============ */
+:root {
+  --bg:#f6f5f1; --surface:#fff; --surface-2:#efede7; --border:#e2dfd6;
+  --border-strong:#cfccc2; --text:#23211c; --text-dim:#6e6a5e;
+  --accent:#0d7a6f; --accent-strong:#0a5f57; --accent-soft:#e1f0ec;
+  --danger:#b3403a; --danger-soft:#f9e8e7; --urgent:#c2410c; --urgent-soft:#fdece3;
+  --due:#2c6cb8; --due-soft:#e4eefb; --done:#1b7f5e; --done-soft:#e2f2e8;
+  --canceled:#74716a; --canceled-soft:#ededeb;
+  --shadow:0 1px 2px rgba(35,33,28,.05),0 4px 14px rgba(35,33,28,.04);
+  --radius:16px;
+}
+html[data-theme='dark']{
+  --bg:#161511; --surface:#1e1d17; --surface-2:#26241d; --border:#34322a;
+  --border-strong:#46443a; --text:#eceade; --text-dim:#a39e8d;
+  --accent:#3ab5a5; --accent-strong:#5ecdbc; --accent-soft:#1d2e2b;
+  --danger:#e07b74; --danger-soft:#33211f; --urgent:#f08a5d; --urgent-soft:#34211a;
+  --due:#6fa8e8; --due-soft:#1c2733; --done:#4cc696; --done-soft:#1c2e26;
+  --canceled:#96938a; --canceled-soft:#272621;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.18);
+}
+/* ============ ۲. پایه ============ */
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Vazirmatn','Segoe UI',Tahoma,sans-serif;
+     font-size:15px;line-height:1.75;-webkit-font-smoothing:antialiased;min-height:100vh}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+.container{max-width:1080px;margin:0 auto;padding:24px 20px 70px}
+::selection{background:var(--accent-soft)}
+a{color:var(--accent-strong)}
+/* ============ ۳. هدر و تبها ============ */
+.app-header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,var(--accent),var(--accent-strong));
+      color:#fff;display:grid;place-items:center;font-size:22px;font-weight:800}
+.brand h1{font-size:17px;margin:0;font-weight:800}
+.brand p{margin:0;font-size:12.5px;color:var(--text-dim)}
+.header-side{margin-inline-start:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.clock{font-size:12.5px;color:var(--text-dim);white-space:nowrap}
+.theme-toggle{width:34px;height:34px;border-radius:10px;border:1px solid var(--border-strong);
+              background:var(--surface);color:var(--text-dim);cursor:pointer}
+.tabs{position:sticky;top:10px;z-index:20;display:flex;gap:4px;background:var(--surface-2);
+      border:1px solid var(--border);border-radius:999px;padding:5px;margin-bottom:20px;
+      overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{border:0;background:transparent;color:var(--text-dim);padding:8px 16px;border-radius:999px;
+     cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:7px;font-weight:500;transition:color .15s}
+.tab:hover{color:var(--text)}
+.tab.active{background:var(--surface);color:var(--accent-strong);font-weight:700;box-shadow:var(--shadow)}
+.primary-tabs{top:8px;background:var(--surface);border-color:var(--border-strong);box-shadow:var(--shadow)}
+.primary-tabs .tab{flex:1;justify-content:center;padding:10px 14px;font-size:14px}
+.primary-tabs .tab.active{background:var(--accent);color:#fff;box-shadow:none}
+.tab-badge{background:var(--accent);color:#fff;border-radius:999px;min-width:21px;height:21px;
+           font-size:11.5px;font-weight:700;display:inline-grid;place-items:center;padding-inline:5px}
+.primary-tabs .tab.active .tab-badge{background:rgba(255,255,255,.25)}
+/* ============ ۴. کارت، دکمه، فیلد ============ */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+      padding:18px 20px;box-shadow:var(--shadow)}
+.card + .card{margin-top:14px}
+.card-title{margin:0 0 4px;font-size:15px;font-weight:800}
+.card-sub{margin:0 0 16px;font-size:12.5px;color:var(--text-dim)}
+.btn{border:1px solid var(--border-strong);background:var(--surface);color:var(--text);padding:7px 14px;
+     border-radius:10px;cursor:pointer;font-weight:600;font-size:13.5px;white-space:nowrap;
+     transition:background .15s,border-color .15s}
+.btn:hover{background:var(--surface-2)}
+.btn:disabled{opacity:.6;cursor:default}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-strong);border-color:var(--accent-strong)}
+.btn-danger{background:transparent;border-color:transparent;color:var(--danger)}
+.btn-danger:hover{background:var(--danger-soft)}
+.btn-small{padding:4px 10px;font-size:12.5px;border-radius:8px}
+.btn-ok{background:var(--done);border-color:var(--done);color:#fff}
+.input,textarea.input{background:var(--surface);border:1px solid var(--border-strong);border-radius:10px;
+                       padding:8px 12px;width:100%;outline:none}
+.input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+/* ============ ۵. چیپها ============ */
+.chip{border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:999px;
+      padding:4px 11px;font-size:12.5px;cursor:pointer;white-space:nowrap}
+.chip[aria-pressed='true']{background:var(--accent-soft);border-color:var(--accent);
+                          color:var(--accent-strong);font-weight:700}
+.chip-row{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.chip-label{font-size:12px;color:var(--text-dim);margin-inline-end:4px}
+.tag{display:inline-block;border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:700;white-space:nowrap}
+.t-new{background:var(--due-soft);color:var(--due)}
+.t-changed{background:var(--urgent-soft);color:var(--urgent)}
+.t-pending{background:var(--accent-soft);color:var(--accent-strong)}
+.t-running{background:var(--due-soft);color:var(--due)}
+.t-ok{background:var(--done-soft);color:var(--done)}
+.t-error{background:var(--danger-soft);color:var(--danger)}
+.t-rejected{background:var(--canceled-soft);color:var(--canceled)}
+.t-idle{background:var(--canceled-soft);color:var(--canceled)}
+/* ============ ۶. تاگل اصلی ============ */
+.toggle-wrap{display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+             background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+.switch{position:relative;width:66px;height:36px;border:1px solid var(--border-strong);
+        border-radius:999px;background:var(--surface);cursor:pointer;flex:none;transition:background .18s}
+.switch::after{content:"";position:absolute;top:4px;inset-inline-start:4px;width:26px;height:26px;
+               border-radius:50%;background:var(--text-dim);transition:transform .18s,background .18s}
+.switch[aria-checked='true']{background:var(--accent);border-color:var(--accent)}
+.switch[aria-checked='true']::after{transform:translateX(-30px);background:#fff}
+.switch-text{display:flex;flex-direction:column;gap:2px;min-width:0}
+.switch-text b{font-size:15px}
+.switch-text span{font-size:12.5px;color:var(--text-dim)}
+.mode-pill{margin-inline-start:auto;font-size:12.5px;font-weight:700;border-radius:999px;
+           padding:5px 12px;background:var(--accent-soft);color:var(--accent-strong)}
+.mode-pill.manual{background:var(--urgent-soft);color:var(--urgent)}
+/* ============ ۷. آیتمهای لیست ============ */
+.list{display:flex;flex-direction:column;gap:9px}
+.item{background:var(--surface);border:1px solid var(--border);border-inline-start:4px solid var(--border-strong);
+      border-radius:12px;box-shadow:var(--shadow);min-width:0;padding:11px 13px;
+      display:flex;flex-direction:column;gap:8px}
+.item.b-new{border-inline-start-color:var(--due)}
+.item.b-changed{border-inline-start-color:var(--urgent)}
+.item.b-pending{border-inline-start-color:var(--accent)}
+.item.b-ok{border-inline-start-color:var(--done)}
+.item.b-error{border-inline-start-color:var(--danger)}
+.item.is-busy{opacity:.6}
+.item-top{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.item-title{font-size:14px;font-weight:700;overflow-wrap:anywhere;direction:ltr;text-align:right}
+.item-meta{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12px;color:var(--text-dim)}
+.item-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.item-comment{margin:0;font-size:12.5px;color:var(--accent-strong);background:var(--accent-soft);
+              border-radius:8px;padding:5px 9px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:150px;overflow:auto}
+.code-preview{margin:0;font-family:Consolas,'Courier New',monospace;font-size:12px;direction:ltr;text-align:left;
+              background:var(--surface-2);border:1px dashed var(--border-strong);border-radius:9px;
+              padding:9px 11px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:140px;overflow:auto;color:var(--text)}
+/* ============ ۸. وضعیت و آمار ============ */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.stat{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:11px 13px}
+.stat b{display:block;font-size:20px;font-weight:800}
+.stat span{font-size:12px;color:var(--text-dim)}
+.conn{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;
+      border-radius:999px;padding:4px 11px}
+.conn i{width:8px;height:8px;border-radius:50%;background:currentColor;display:inline-block}
+.conn.on{background:var(--done-soft);color:var(--done)}
+.conn.off{background:var(--danger-soft);color:var(--danger)}
+/* ============ ۹. حالت خالی، بازخورد، لاگ ============ */
+.empty-state{text-align:center;padding:30px 18px;display:flex;flex-direction:column;gap:6px;align-items:center;color:var(--text-dim)}
+.empty-state .big{font-size:30px}
+.feedback{position:fixed;bottom:18px;inset-inline-start:50%;transform:translateX(50%);z-index:40;
+          background:var(--surface);border:1px solid var(--border-strong);box-shadow:var(--shadow);
+          border-radius:12px;padding:9px 16px;font-size:13px;font-weight:600;opacity:0;
+          transition:opacity .2s;pointer-events:none;max-width:min(90vw,520px)}
+.feedback.show{opacity:1}
+.feedback.ok{border-color:var(--done);color:var(--done)}
+.feedback.bad{border-color:var(--danger);color:var(--danger)}
+.log-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.log-table th,.log-table td{padding:8px 9px;border-bottom:1px solid var(--border);text-align:right;vertical-align:top}
+.log-table th{color:var(--text-dim);font-weight:700;font-size:12px}
+.log-table td.mono{direction:ltr;text-align:right;font-family:Consolas,monospace;font-size:11.5px}
+.dialog-q{font-size:16px;font-weight:800;margin:0 0 6px}
+.dialog-from{font-size:12px;color:var(--text-dim);margin:0 0 14px}
+.hint{font-size:12.5px;color:var(--text-dim);margin:10px 0 0}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.spacer{flex:1}
+@media (min-width:1400px){
+  .container{max-width:1240px;padding-inline:32px}
+  .stat-grid{grid-template-columns:repeat(4,1fr)}
+}
+@media (max-width:720px){
+  .container{padding:16px 12px 60px}
+  .primary-tabs .tab{padding:9px 10px;font-size:12.5px}
+  .header-side{width:100%;margin-inline-start:0}
+  .switch-text b{font-size:14px}
+  .log-table{font-size:11.5px}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header class="app-header">
+    <div class="brand">
+      <div class="logo">W</div>
+      <div>
+        <h1>Windows SuperControl</h1>
+        <p>پایش و اجرای کدهای پوشهٔ گوگل درایو</p>
+      </div>
+    </div>
+    <div class="header-side">
+      <span class="clock" id="clock">—</span>
+      <button class="theme-toggle" id="themeBtn" title="تغییر تم">◐</button>
+    </div>
+  </header>
+
+  <nav class="tabs primary-tabs" id="tabs">
+    <button class="tab active" data-tab="control">🎛 کنترل</button>
+    <button class="tab" data-tab="codes">📄 کدها <span class="tab-badge" id="badgeCodes">0</span></button>
+    <button class="tab" data-tab="dialogs">💬 دیالوگ <span class="tab-badge" id="badgeDialogs">0</span></button>
+    <button class="tab" data-tab="report">📊 گزارش</button>
+  </nav>
+
+  <div id="feedback" class="feedback"></div>
+  <main id="content"></main>
+</div>
+
+<script>
+/* ----------------- ابزارها ----------------- */
+const $ = s => document.querySelector(s);
+let S = null;
+let currentTab = 'control';
+let currentFilter = 'all';
+let feedbackTimer = null;
+
+function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fa(n){ return String(n ?? '').replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d]); }
+
+function jalali(gy, gm, gd){
+  const g_d_m=[0,31,59,90,120,151,181,212,243,273,304,334];
+  let jy = (gy<=1600)?0:979, gy2=(gy<=1600)?gy-621:gy-1600;
+  let days=(365*gy2)+Math.floor((gy2+3)/4)-Math.floor((gy2+99)/100)+Math.floor((gy2+399)/400)-80+gd
+      +((gm>7)?(g_d_m[gm-1]+6):g_d_m[gm-1]);
+  jy+=33*Math.floor(days/12053); days%=12053;
+  jy+=4*Math.floor(days/1461); days%=1461;
+  if(days>365){ jy+=Math.floor((days-1)/365); days=(days-1)%365; }
+  const jm=(days<186)?1+Math.floor(days/31):7+Math.floor((days-186)/30);
+  const jd=1+((days<186)?(days%31):((days-186)%30));
+  return [jy,jm,jd];
+}
+const MONTHS=['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
+function updateClock(){
+  const d=new Date(), j=jalali(d.getFullYear(),d.getMonth()+1,d.getDate());
+  const hh=String(d.getHours()).padStart(2,'0'), mm=String(d.getMinutes()).padStart(2,'0'), ss=String(d.getSeconds()).padStart(2,'0');
+  $('#clock').textContent = `${fa(j[0])} ${MONTHS[j[1]-1]} ${fa(j[2])}  •  ${fa(hh+':'+mm+':'+ss)}`;
+}
+function storeGet(k){ try{return localStorage.getItem(k);}catch(e){return null;} }
+function storeSet(k,v){ try{localStorage.setItem(k,v);}catch(e){} }
+function applyTheme(){
+  const t=storeGet('wsc-theme')||'dark';
+  document.documentElement.setAttribute('data-theme',t);
+  $('#themeBtn').textContent = t==='dark'?'☀':'◐';
+}
+function feedback(msg, kind){
+  const el=$('#feedback');
+  el.textContent=msg; el.className='feedback show '+(kind||'');
+  clearTimeout(feedbackTimer);
+  feedbackTimer=setTimeout(()=>{el.className='feedback '+(kind||'');},3200);
+}
+async function pyapi(){
+  for(let i=0;i<15;i++){
+    if(window.pywebview && window.pywebview.api) return window.pywebview.api;
+    await new Promise(r=>setTimeout(r,100));
+  }
+  return null;
+}
+async function call(method,...args){
+  if(window.pywebview){
+    const a=await pyapi();
+    if(a && typeof a[method]==='function') return await a[method](...args);
+    throw new Error('pywebview هنوز آماده نشده است');
+  }
+  const r=await fetch('/api/'+method,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({args})});
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return await r.json();
+}
+function statusTag(st){
+  const map={'جدید':['t-new','b-new'],'تغییر کرده':['t-changed','b-changed'],
+             'منتظر تایید':['t-pending','b-pending'],'در حال اجرا':['t-running','b-pending'],
+             'اجرا شد':['t-ok','b-ok'],'خطا':['t-error','b-error'],
+             'رد شد':['t-rejected','b-idle'],'بدون تغییر':['t-idle','b-idle']};
+  const [c]=map[st]||['t-idle','b-idle'];
+  return `<span class="tag ${c}">${esc(st||'—')}</span>`;
+}
+function itemBorder(st){
+  const m={'جدید':'b-new','تغییر کرده':'b-changed','منتظر تایید':'b-pending','در حال اجرا':'b-pending',
+           'اجرا شد':'b-ok','خطا':'b-error'};
+  return m[st]||'';
+}
+
+/* ----------------- رندر ----------------- */
+function render(){
+  if(!S) return;
+  const pending=(S.files||[]).filter(f=>f.pending).length;
+  const openDialogs=(S.dialogs||[]).filter(d=>!d.answer).length;
+  $('#badgeCodes').textContent=fa(pending);
+  $('#badgeDialogs').textContent=fa(openDialogs);
+  document.querySelectorAll('#tabs .tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===currentTab));
+  const C=$('#content');
+  if(currentTab==='control') C.innerHTML=renderControl();
+  else if(currentTab==='codes') C.innerHTML=renderCodes();
+  else if(currentTab==='dialogs') C.innerHTML=renderDialogs();
+  else C.innerHTML=renderReport();
+  bindActions();
+}
+
+function renderControl(){
+  const auto=S.auto;
+  return `
+  <section class="card">
+    <h2 class="card-title">هستهٔ برنامه</h2>
+    <p class="card-sub">همین یک دکمه رفتار کل سیستم را تعیین میکند.</p>
+    <div class="toggle-wrap">
+      <button class="switch" id="autoSwitch" role="switch" aria-checked="${auto}" title="اجرای خودکار کدهای جدید"></button>
+      <div class="switch-text">
+        <b>اجرای خودکار کدهای جدید</b>
+        <span>${auto
+          ? 'هر فایل پایتونی که در پوشهٔ درایو ساخته یا ویرایش شود، بدون پرسش اجرا میشود.'
+          : 'حالت دستی: فایلهای تازه/ویرایششده در لیست «کدها» منتظر تأیید شما میمانند.'}</span>
+      </div>
+      <span class="mode-pill ${auto?'':'manual'}">${auto?'⚡ خودکار':'✋ دستی'}</span>
+    </div>
+    <div class="stat-grid" style="margin-top:16px">
+      <div class="stat"><b>${fa(S.stats.files)}</b><span>فایل کد شناساییشده</span></div>
+      <div class="stat"><b>${fa(S.stats.pending)}</b><span>منتظر تأیید</span></div>
+      <div class="stat"><b>${fa(S.stats.runs)}</b><span>اجرای انجامشده</span></div>
+      <div class="stat"><b>${fa(S.stats.errors)}</b><span>خطا</span></div>
+    </div>
+    <div class="row">
+      <span class="conn ${S.connected?'on':'off'}"><i></i>${S.connected?'درایو متصل است':'درایو در دسترس نیست (کش محلی)'}</span>
+      <span class="chip-label">آخرین بررسی: ${esc(S.last_check||'—')}</span>
+      <span class="spacer"></span>
+      <button class="btn" data-act="refresh">🔄 بررسی الان</button>
+      <button class="btn" data-act="openfolder">↗ باز کردن پوشه درایو</button>
+    </div>
+    <div class="chip-row" style="margin-top:14px">
+      <span class="chip-label">فاصلهٔ پایش:</span>
+      ${[2,4,10].map(n=>`<button class="chip" data-act="poll" data-n="${n}" aria-pressed="${S.poll_seconds===n}">${fa(n)} ثانیه</button>`).join('')}
+    </div>
+    <p class="hint">پایش در <b>سطح شبکه</b> انجام میشود (لیست عمومی پوشهٔ درایو)، نه از روی پوشهٔ لوکال <span style="direction:ltr;display:inline-block">G:\My Drive\Windows-SuperControl</span>. فقط فایلهایی که نامشان به <span style="direction:ltr;display:inline-block">.py.txt</span> ختم میشود بررسی میشوند و <span style="direction:ltr;display:inline-block">main.py.txt</span> بهطور پیشفرض مستثناست.</p>
+  </section>
+
+  <section class="card">
+    <h2 class="card-title">آخرین رویدادها</h2>
+    <p class="card-sub">تازهترین تغییرات و اجراها</p>
+    ${renderLogTable((S.logs||[]).slice(0,6),true)}
+  </section>`;
+}
+
+function renderCodes(){
+  let files=S.files||[];
+  if(currentFilter==='pending') files=files.filter(f=>f.pending);
+  else if(currentFilter==='done') files=files.filter(f=>!f.pending && f.status!=='رد شد');
+  else if(currentFilter==='rejected') files=files.filter(f=>f.status==='رد شد');
+  return `
+  <section class="card">
+    <h2 class="card-title">کدهای پوشهٔ درایو</h2>
+    <p class="card-sub">فایلهای پایتونی که از طریق شبکه شناسایی شدهاند.</p>
+    <div class="chip-row">
+      <span class="chip-label">فیلتر:</span>
+      <button class="chip" data-act="filter" data-f="all" aria-pressed="${currentFilter==='all'}">همه</button>
+      <button class="chip" data-act="filter" data-f="pending" aria-pressed="${currentFilter==='pending'}">منتظر تأیید</button>
+      <button class="chip" data-act="filter" data-f="done" aria-pressed="${currentFilter==='done'}">بررسیشده</button>
+      <button class="chip" data-act="filter" data-f="rejected" aria-pressed="${currentFilter==='rejected'}">ردشده</button>
+      <span class="spacer"></span>
+      <button class="btn btn-small" data-act="refresh">🔄 بررسی</button>
+    </div>
+    ${files.length? `<div class="list">${files.map(renderFile).join('')}</div>` : `
+      <div class="empty-state"><div class="big">📄</div><b>فعلاً کدی پیدا نشد</b>
+      <span>یک فایل با پسوند <span dir="ltr">.py.txt</span> توی پوشهٔ درایو بساز تا اینجا ظاهر شود.</span></div>`}
+  </section>`;
+}
+function renderFile(f){
+  const acts=[];
+  if(f.pending){
+    acts.push(`<button class="btn btn-primary btn-small" data-act="approve" data-id="${esc(f.id)}">بله اجرا کن</button>`);
+    acts.push(`<button class="btn btn-danger btn-small" data-act="reject" data-id="${esc(f.id)}">نه اجرا نکن</button>`);
+  } else {
+    acts.push(`<button class="btn btn-small" data-act="runagain" data-id="${esc(f.id)}">▶ اجرای مجدد</button>`);
+  }
+  return `<article class="item ${itemBorder(f.status)} ${f.running?'is-busy':''}">
+    <div class="item-top">
+      <span class="item-title" dir="ltr">${esc(f.name)}</span>
+      ${statusTag(f.status)}
+      <span class="spacer"></span>
+      <span class="chip-label">${fa(f.size)} بایت</span>
+    </div>
+    <div class="item-meta">
+      <span>SHA-256: <span dir="ltr">${esc((f.hash||'').slice(0,16))}…</span></span>
+      <span>شناسایی: ${esc(f.first_seen||'—')}</span>
+      <span>آخرین تغییر: ${esc(f.last_changed||'—')}</span>
+      <span>اجراها: ${fa(f.runs||0)}</span>
+      ${f.last_duration!=null?`<span>آخرین اجرا: ${fa(f.last_duration)} ms</span>`:''}
+    </div>
+    ${f.output?`<pre class="item-comment">${esc(f.output)}</pre>`:''}
+    <div class="item-actions">
+      ${acts.join('')}
+      <button class="btn btn-small" data-act="preview" data-id="${esc(f.id)}">👁 نمایش کد</button>
+    </div>
+    ${f.preview?`<pre class="code-preview" id="pv-${esc(f.id)}" style="display:none">${esc(f.preview)}</pre>`:''}
+  </article>`;
+}
+
+function renderDialogs(){
+  const ds=S.dialogs||[];
+  return `
+  <section class="card">
+    <h2 class="card-title">صندوق دیالوگ</h2>
+    <p class="card-sub">پیامهایی که از طرف ایجنت مستقیماً توی <span dir="ltr">dialog.txt</span> درایو نوشته میشود.</p>
+    ${ds.length? `<div class="list">${ds.map(d=>`
+      <article class="item ${d.answer?'b-ok':'b-pending'}">
+        <div class="item-top">
+          <span class="item-title">پیام شمارهٔ ${fa(d.id)}</span>
+          ${d.answer?`<span class="tag t-ok">پاسخ داده شد</span>`:`<span class="tag t-pending">منتظر پاسخ</span>`}
+          <span class="spacer"></span><span class="chip-label">${esc(d.time||'')}</span>
+        </div>
+        <p class="dialog-q">${esc(d.question||'')}</p>
+        <p class="dialog-from">از: ${esc(d.from||'Arena Agent')} • نوع: ${esc(d.type||'yesno')}</p>
+        ${d.note?`<p class="item-comment">${esc(d.note)}</p>`:''}
+        ${d.answer
+          ? `<div class="item-comment">پاسخ شما: <b>${esc(d.answer)}</b></div>`
+          : `<div class="item-actions">
+               <button class="btn btn-ok btn-small" data-act="answer" data-id="${esc(d.id)}" data-a="بله">بله، ارتباط برقراره</button>
+               <button class="btn btn-danger btn-small" data-act="answer" data-id="${esc(d.id)}" data-a="خیر">خیر، مشکل دارد</button>
+             </div>`}
+      </article>`).join('')}</div>`
+    : `<div class="empty-state"><div class="big">💬</div><b>پیام تازهای نیست</b>
+       <span>وقتی از طرف ایجنت پیامی توی درایو نوشته شود، اینجا ظاهر میشود.</span></div>`}
+    <p class="hint">اگر <span dir="ltr">WEBAPP_URL</span> در <span dir="ltr">config.txt</span> تنظیم شده باشد، پاسخ شما در فایل <span dir="ltr">dialog-answer.txt</span> توی درایو هم نوشته میشود تا ایجنت مستقیماً بخواندش.</p>
+  </section>`;
+}
+function renderLogTable(logs,compact){
+  if(!logs||!logs.length) return `<div class="empty-state"><div class="big">📊</div><b>هنوز گزارشی نیست</b></div>`;
+  return `<div style="overflow-x:auto"><table class="log-table">
+    <thead><tr><th>زمان</th><th>رویداد</th><th>فایل</th><th>حالت</th>${compact?'':'<th>جزئیات</th>'}<th>زمان (ms)</th></tr></thead>
+    <tbody>${logs.map(l=>`<tr>
+      <td class="mono">${esc(l.time||'')}</td>
+      <td>${esc(l.event||'')}</td>
+      <td class="mono">${esc(l.file||'—')}</td>
+      <td>${statusTag(l.status)}</td>
+      ${compact?'':`<td>${esc(l.detail||'')}</td>`}
+      <td class="mono">${l.duration!=null?fa(l.duration):'—'}</td>
+    </tr>`).join('')}</tbody></table></div>`;
+}
+function renderReport(){
+  return `<section class="card">
+    <h2 class="card-title">گزارش کامل</h2>
+    <p class="card-sub">تمام رویدادها، اجراها و زمانسنجیها (آخرین ۲۰۰ مورد).</p>
+    <div class="row" style="margin-bottom:14px">
+      <button class="btn btn-small" data-act="clearlogs">🧹 پاک کردن گزارش</button>
+      <span class="spacer"></span><span class="chip-label">تعداد: ${fa((S.logs||[]).length)}</span>
+    </div>
+    ${renderLogTable(S.logs||[],false)}
+  </section>`;
+}
+
+/* ----------------- رویدادها ----------------- */
+function bindActions(){
+  document.querySelectorAll('#tabs .tab').forEach(t=>t.onclick=()=>{currentTab=t.dataset.tab;render();});
+  const sw=$('#autoSwitch');
+  if(sw) sw.onclick=async()=>{
+    const v=!S.auto;
+    try{ await call('set_auto',v); S.auto=v; render(); feedback(v?'حالت خودکار فعال شد':"حالت دستی فعال شد",'ok'); }
+    catch(e){ feedback('خطا: '+e,'bad'); }
+  };
+  document.querySelectorAll('[data-act]').forEach(el=>el.onclick=async()=>{
+    const a=el.dataset.act;
+    try{
+      if(a==='filter'){ currentFilter=el.dataset.f; render(); return; }
+      if(a==='refresh'){ await call('refresh'); feedback('در حال بررسی درایو …','ok'); return; }
+      if(a==='openfolder'){ await call('open_folder'); return; }
+      if(a==='poll'){ await call('set_poll',+el.dataset.n); S.poll_seconds=+el.dataset.n; render(); feedback('فاصلهٔ پایش تغییر کرد','ok'); return; }
+      if(a==='approve'){ await call('approve',el.dataset.id); feedback('در حال اجرا …','ok'); return; }
+      if(a==='reject'){ await call('reject',el.dataset.id); feedback('اجرا رد شد'); return; }
+      if(a==='runagain'){ await call('run_again',el.dataset.id); feedback('در حال اجرای مجدد …','ok'); return; }
+      if(a==='answer'){ await call('answer_dialog',el.dataset.id,el.dataset.a); feedback('پاسخ ثبت شد','ok'); return; }
+      if(a==='clearlogs'){ await call('clear_logs'); feedback('گزارش پاک شد'); return; }
+      if(a==='preview'){
+        const p=document.getElementById('pv-'+el.dataset.id);
+        if(p) p.style.display = p.style.display==='none'?'block':'none';
+        return;
+      }
+    }catch(e){ feedback('خطا: '+e,'bad'); }
+  });
+}
+let lastSig = null;
+async function refresh(){
+  try{
+    const next = await call('get_state');
+    const sig = JSON.stringify(next);
+    S = next;
+    // فقط وقتی واقعاً تغییری کرده رندر کن؛ وگرنه کلیکها و پیشنمایش باز خراب میشوند
+    if(sig !== lastSig){ lastSig = sig; render(); }
+  }catch(e){
+    lastSig = null;
+    $('#content').innerHTML=`<section class="card"><b>ارتباط با هستهٔ پایتون برقرار نشد</b><p class="hint">${esc(e)}</p></section>`;
+  }
+}
+
+applyTheme(); updateClock(); setInterval(updateClock,1000);
+$('#themeBtn').onclick=()=>{
+  const cur=document.documentElement.getAttribute('data-theme');
+  const nxt=cur==='dark'?'light':'dark';
+  storeSet('wsc-theme',nxt); applyTheme();
+};
+refresh(); setInterval(refresh,1000);
+window.addEventListener('pywebviewready',refresh);
+</script>
+</body>
+</html>

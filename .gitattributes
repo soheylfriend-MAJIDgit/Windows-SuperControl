@@ -1,4 +1,10 @@
-# فایل bat حتماً با CRLF باشد تا cmd.exe ویندوز درست اجراش کند
+# فایلهای ویندوزی حتماً CRLF باشند
 *.bat text eol=crlf
+*.vbs text eol=crlf
+*.lnk binary
+
+# بقیه LF
 *.py text eol=lf
 *.md text eol=lf
+*.html text eol=lf
+*.txt text eol=lf

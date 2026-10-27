@@ -1,0 +1,36 @@
+# ===========================================================
+#  تنظیمات Windows SuperControl (اختیاری)
+#  این فایل را به نام config.txt کنار bootstrap.py کپی کن.
+#  اگر وجود نداشته باشد، برنامه همان تنظیمات را از config.txt
+#  داخل پوشهٔ گوگل درایو میخواند و گرنه از مقادیر پیشفرض.
+# ===========================================================
+
+# شناسهٔ پوشهٔ درایو (بعد از /folders/ در آدرس پوشه)
+FOLDER_ID=1PmMAu537pzN3mjKf_PYctUOlbOIQCUf1
+
+# فاصلهٔ پایش شبکه بر حسب ثانیه (حداقل ۲)
+POLL_SECONDS=4
+
+# فقط فایلهایی با این پسوند بهعنوان «کد پایتونی» شناسایی میشوند.
+# فایلهای config.txt / name.txt / dialog.txt / Code.gs.txt هرگز اجرا نمیشوند.
+CODE_SUFFIX=.py.txt
+
+# فایلهای مستثنا (با کاما جدا کن)
+EXCLUDE=main.py.txt
+
+# فایل صندوق پیام (بخش دیالوگ)
+DIALOG_FILE_ID=10z2lb0jbThUh8kaWERYUttxudeCzX-Wf
+
+# فایل تنظیمات داخل درایو
+CONFIG_FILE_ID=1nrCZJoXHuLXmQir9xwLrO1dEWV5OdYog
+
+# آدرس وب اپ Apps Script (اختیاری؛ فقط برای نوشتن پاسخ در درایو)
+WEBAPP_URL=
+WEBAPP_SECRET=
+
+# اگر Drive for Desktop داری، پاسخ دیالوگ اینجا هم نوشته میشود تا سینک شود.
+LOCAL_DRIVE_PATH=G:\My Drive\Windows-SuperControl
+
+# حداکثر اندازهٔ فایل کد (بایت) و مهلت اجرای هر کد (ثانیه)
+MAX_CODE_BYTES=200000
+RUN_TIMEOUT=60
