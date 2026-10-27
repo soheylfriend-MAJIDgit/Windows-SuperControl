@@ -393,27 +393,39 @@ function renderDialogs(){
   return `
   <section class="card">
     <h2 class="card-title">صندوق دیالوگ</h2>
-    <p class="card-sub">پیامهایی که از طرف ایجنت مستقیماً توی <span dir="ltr">dialog.txt</span> درایو نوشته میشود.</p>
-    ${ds.length? `<div class="list">${ds.map(d=>`
+    <p class="card-sub">پیامها و دستورهایی که از طرف ایجنت مستقیماً توی <span dir="ltr">dialog.txt</span> درایو نوشته میشود.</p>
+    ${ds.length? `<div class="list">${ds.map(d=>{
+      const choices=String(d.choices||'').split(/[,|،]/).map(x=>x.trim()).filter(Boolean);
+      const buttons = choices.length
+        ? choices.map((c,i)=>`<button class="btn ${i===0?'btn-primary':'btn-ok'} btn-small"
+              data-act="answer" data-id="${esc(d.id)}" data-a="${esc(c)}">${esc(c)}</button>`).join('')
+        : `<button class="btn btn-primary btn-small" data-act="answer" data-id="${esc(d.id)}" data-a="بله">بله</button>
+           <button class="btn btn-danger btn-small" data-act="answer" data-id="${esc(d.id)}" data-a="خیر">خیر</button>`;
+      return `
       <article class="item ${d.answer?'b-ok':'b-pending'}">
         <div class="item-top">
-          <span class="item-title">پیام شمارهٔ ${fa(d.id)}</span>
+          <span class="item-title">دستور شمارهٔ ${fa(d.id)}</span>
           ${d.answer?`<span class="tag t-ok">پاسخ داده شد</span>`:`<span class="tag t-pending">منتظر پاسخ</span>`}
           <span class="spacer"></span><span class="chip-label">${esc(d.time||'')}</span>
         </div>
         <p class="dialog-q">${esc(d.question||'')}</p>
-        <p class="dialog-from">از: ${esc(d.from||'Arena Agent')} • نوع: ${esc(d.type||'yesno')}</p>
+        <p class="dialog-from">از: ${esc(d.from||'Arena Agent')} • نوع: ${esc(d.type||'yesno')}${choices.length?' • انتخابها: '+esc(choices.join(' / ')):''}</p>
         ${d.note?`<p class="item-comment">${esc(d.note)}</p>`:''}
         ${d.answer
-          ? `<div class="item-comment">پاسخ شما: <b>${esc(d.answer)}</b></div>`
-          : `<div class="item-actions">
-               <button class="btn btn-ok btn-small" data-act="answer" data-id="${esc(d.id)}" data-a="بله">بله، ارتباط برقراره</button>
-               <button class="btn btn-danger btn-small" data-act="answer" data-id="${esc(d.id)}" data-a="خیر">خیر، مشکل دارد</button>
+          ? `<div class="item-comment">پاسخ شما: <b>${esc(d.answer)}</b>${d.answer_time?' — '+esc(d.answer_time):''}${d.answer_note?' | '+esc(d.answer_note):''}</div>
+             <div class="item-actions">
+               <span class="chip-label">جواب ذخیره شد. میتوانی دوباره بدهی:</span>
+               ${buttons}
+             </div>`
+          : `<div class="item-actions">${buttons}</div>
+             <div class="item-actions">
+               <input class="input" id="ans-${esc(d.id)}" style="max-width:230px" placeholder="یا جواب دلخواهت رو بنویس…">
+               <button class="btn btn-small" data-act="answertext" data-id="${esc(d.id)}">ارسال پاسخ</button>
              </div>`}
-      </article>`).join('')}</div>`
+      </article>`;}).join('')}</div>`
     : `<div class="empty-state"><div class="big">💬</div><b>پیام تازهای نیست</b>
        <span>وقتی از طرف ایجنت پیامی توی درایو نوشته شود، اینجا ظاهر میشود.</span></div>`}
-    <p class="hint">اگر <span dir="ltr">WEBAPP_URL</span> در <span dir="ltr">config.txt</span> تنظیم شده باشد، پاسخ شما در فایل <span dir="ltr">dialog-answer.txt</span> توی درایو هم نوشته میشود تا ایجنت مستقیماً بخواندش.</p>
+    <p class="hint">پاسخ در <span dir="ltr">dialog-answer.txt</span> نوشته میشود: هم توی پوشهٔ برنامه و هم (اگر <span dir="ltr">Drive for Desktop</span> داری) توی <span dir="ltr">G:\My Drive\Windows-SuperControl</span> تا مستقیم به درایو برگردد.</p>
   </section>`;
 }
 function renderLogTable(logs,compact){
@@ -460,7 +472,14 @@ function bindActions(){
       if(a==='approve'){ await call('approve',el.dataset.id); feedback('در حال اجرا …','ok'); return; }
       if(a==='reject'){ await call('reject',el.dataset.id); feedback('اجرا رد شد'); return; }
       if(a==='runagain'){ await call('run_again',el.dataset.id); feedback('در حال اجرای مجدد …','ok'); return; }
-      if(a==='answer'){ await call('answer_dialog',el.dataset.id,el.dataset.a); feedback('پاسخ ثبت شد','ok'); return; }
+      if(a==='answer'){ await call('answer_dialog',el.dataset.id,el.dataset.a); feedback('پاسخ ثبت شد و به درایو برگشت','ok'); return; }
+      if(a==='answertext'){
+        const inp=document.getElementById('ans-'+el.dataset.id);
+        const v=((inp&&inp.value)||'').trim();
+        if(!v){ feedback('اول یک متن بنویس','bad'); return; }
+        await call('answer_dialog',el.dataset.id,v);
+        feedback('پاسخ ارسال شد','ok'); return;
+      }
       if(a==='clearlogs'){ await call('clear_logs'); feedback('گزارش پاک شد'); return; }
       if(a==='preview'){
         const p=document.getElementById('pv-'+el.dataset.id);

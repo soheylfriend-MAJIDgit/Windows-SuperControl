@@ -409,6 +409,8 @@ def save_state(state: dict) -> None:
 # دیالوگها
 # ---------------------------------------------------------------------------
 _ANSWER_OK = {"بله", "آره", "اره", "yes", "y", "true", "1", "خیر", "نه", "no", "n", "false", "0"}
+# عبارتهایی که یعنی «جوابی نداده»، نه خود جواب
+_ANSWER_PLACEHOLDERS = ("جوابت", "پاسخت", "your answer", "todo", "منتظر", "همینجا", "—")
 
 
 def parse_dialogs(text: str):
@@ -436,10 +438,13 @@ def parse_dialogs(text: str):
 
 
 def _valid_answer(value: str) -> str:
+    """جوابهای دلخواه (مثلاً «فوتبال») هم قبول میشوند؛ فقط متنهای راهنما رد میشود."""
     v = (value or "").strip()
-    if v.lower() in _ANSWER_OK and len(v) <= 12:
-        return v
-    return ""
+    if not v or len(v) > 24:
+        return ""
+    if any(p in v.lower() for p in _ANSWER_PLACEHOLDERS):
+        return ""
+    return v
 
 
 # ---------------------------------------------------------------------------
@@ -721,13 +726,15 @@ class Core:
                         "from": block.get("from", "Arena Agent"),
                         "type": block.get("type", "yesno"),
                         "note": block.get("note", ""),
+                        "choices": block.get("choices", ""),
                         "answer": answer,
                         "time": block.get("time") or now_fa(),
                         "answer_time": "",
+                        "answer_note": "",
                     }
                     changed = True
                 else:
-                    for field in ("question", "from", "type", "note"):
+                    for field in ("question", "from", "type", "note", "choices"):
                         if block.get(field) and cur.get(field) != block[field]:
                             cur[field] = block[field]
                             changed = True
@@ -738,6 +745,24 @@ class Core:
             self._add_log("پیام جدید درایو", "dialog.txt", "منتظر تایید",
                           "%d پیام" % len(blocks))
             save_state(self.state)
+
+    def _drive_sync_targets(self):
+        """پوشههای محتمل Drive for Desktop که نوشتن تویشان به درایو سینک میشود."""
+        targets = []
+        configured = self.cfg.get("LOCAL_DRIVE_PATH", "")
+        if configured:
+            targets.append(Path(configured))
+        if os.name == "nt":
+            targets.append(Path.home() / "Google Drive" / "Windows-SuperControl")
+            for letter in "GHIJKLMNOP":
+                targets.append(Path("%s:\\My Drive\\Windows-SuperControl" % letter))
+        seen, unique = set(), []
+        for t in targets:
+            key = str(t).lower()
+            if key not in seen:
+                seen.add(key)
+                unique.append(t)
+        return unique
 
     def answer_dialog(self, dialog_id: str, answer: str, note: str = ""):
         with self.lock:
@@ -763,16 +788,14 @@ class Core:
 
         # اگر پوشهٔ همگامسازی Drive for Desktop وجود داشته باشد، پاسخ آنجا
         # هم نوشته میشود تا مستقیماً به درایو برسد (بدون نیاز به Apps Script).
-        local = self.cfg.get("LOCAL_DRIVE_PATH", "")
-        if local:
+        for folder in self._drive_sync_targets():
             try:
-                folder = Path(local)
                 if folder.is_dir():
                     target = folder / "dialog-answer.txt"
                     target.write_text(payload, encoding="utf-8")
                     saved.append(str(target))
             except Exception as exc:
-                log("answer drive write error: %s" % exc, "warn")
+                log("answer drive write error for %s: %s" % (folder, exc), "warn")
 
         webapp = self.cfg.get("WEBAPP_URL", "").strip()
         if webapp:
@@ -809,7 +832,8 @@ class Core:
             last_check = self.state.get("last_check", "")
             poll_seconds = int(self.state.get("poll_seconds", 4))
         files.sort(key=lambda f: f.get("first_seen", ""), reverse=True)
-        dialogs.sort(key=lambda d: str(d.get("id", "")))
+        dialogs.sort(key=lambda d: int(d["id"]) if str(d.get("id", "")).isdigit() else -1,
+                     reverse=True)
 
         for f in files:
             try:

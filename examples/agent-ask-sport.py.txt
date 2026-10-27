@@ -1,0 +1,30 @@
+# -*- coding: utf-8 -*-
+# دستور شماره ۱: یک دیالوگ سادهٔ بله / خیر
+import os
+import sys
+import tkinter as tk
+from pathlib import Path
+from tkinter import messagebox
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except Exception:
+    pass
+
+root = tk.Tk()
+root.withdraw()
+q = "ورزش مورد علاقهات چیه؟\n\nبله = فوتبال\nخیر = بسکتبال"
+ans = "فوتبال" if messagebox.askyesno("پیام از طرف ایجنت", q, parent=root) else "بسکتبال"
+root.destroy()
+
+print("جواب شما: " + ans)
+
+out = "id=3\nquestion=ورزش مورد علاقهات چیه؟\nanswer=%s\n" % ans
+for folder in [Path(os.environ.get("APPDATA", ".")) / "WindowsSuperControl",
+               Path(r"G:\My Drive\Windows-SuperControl")]:
+    try:
+        if folder.is_dir():
+            (folder / "sport-answer.txt").write_text(out, encoding="utf-8")
+            print("ذخیره شد: " + str(folder))
+    except Exception as e:
+        print("خطا: " + str(e))
